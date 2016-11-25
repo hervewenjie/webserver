@@ -46,6 +46,8 @@ mime_type_t zaver_mime[] =
     {NULL ,"text/plain"}
 };
 
+// 处理HTTP请求
+// 填充event里的数据指针
 void do_request(void *ptr) {
     zv_http_request_t *r = (zv_http_request_t *)ptr;
     int fd = r->fd;

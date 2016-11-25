@@ -29,9 +29,10 @@ static void zv_time_update() {
     debug("in zv_time_update, time = %zu", zv_current_msec);
 }
 
-
+// 初始化定时器
 int zv_timer_init() {
     int rc;
+    // 优先级队列初始化
     rc = zv_pq_init(&zv_timer, timer_comp, ZV_PQ_DEFAULT_SIZE);
     check(rc == ZV_OK, "zv_pq_init error");
    
@@ -39,6 +40,7 @@ int zv_timer_init() {
     return ZV_OK;
 }
 
+// 频繁找到最小的key(最早超时事件)
 int zv_find_timer() {
     zv_timer_node *timer_node;
     int time = ZV_TIMER_INFINITE;
