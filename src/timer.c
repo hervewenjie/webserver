@@ -10,7 +10,8 @@ static int timer_comp(void *ti, void *tj) {
     return (timeri->key < timerj->key)? 1: 0;
 }
 
-// 定时器优先级队列
+// 定时器最小堆
+// 每次返回最小定时器值
 zv_pq_t zv_timer;
 // 当前时间
 size_t zv_current_msec;

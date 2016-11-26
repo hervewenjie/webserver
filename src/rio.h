@@ -1,9 +1,4 @@
 
-/*
- * Copyright (C) Zhu Jiashun
- * Copyright (C) Zaver
- */
-
 #ifndef RIO_H
 #define RIO_H
 

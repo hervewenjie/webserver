@@ -1,9 +1,4 @@
 
-/*
- * Copyright (C) Zhu Jiashun
- * Copyright (C) Zaver
- */
-
 #ifndef EPOLL_H
 #define EPOLL_H
 

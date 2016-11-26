@@ -1,9 +1,4 @@
 
-/*
- * Copyright (C) Zhu Jiashun
- * Copyright (C) Zaver
- */
-
 #ifndef DBG_H
 #define DBG_H
 

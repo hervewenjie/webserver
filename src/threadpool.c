@@ -1,9 +1,4 @@
 
-/*
- * Copyright (C) Zhu Jiashun
- * Copyright (C) Zaver
- */
-
 #include "threadpool.h"
 
 typedef enum {

@@ -1,8 +1,4 @@
 
-/*
- * Copyright (C) Zhu Jiashun
- * Copyright (C) Zaver
- */
 
 #ifndef HTTP_REQUEST_H
 #define HTTP_REQUEST_H

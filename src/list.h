@@ -1,9 +1,4 @@
 
-/*
- * Copyright (C) Zhu Jiashun
- * Copyright (C) Zaver
- */
-
 #ifndef ZV_LIST_H
 #define ZV_LIST_H
 

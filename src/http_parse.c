@@ -1,9 +1,4 @@
 
-/*
- * Copyright (C) Zhu Jiashun
- * Copyright (C) Zaver
- */
-
 #include "http.h"
 #include "http_parse.h"
 #include "error.h"

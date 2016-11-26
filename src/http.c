@@ -1,9 +1,4 @@
 
-/*
- * Copyright (C) Zhu Jiashun
- * Copyright (C) Zaver
- */
-
 #include <strings.h>
 #include <sys/mman.h>
 #include <unistd.h>
