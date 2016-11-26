@@ -1,8 +1,4 @@
 
-/*
- * Copyright (C) Zhu Jiashun
- * Copyright (C) Zaver
- */
 
 #ifndef ZV_TIMER_H
 #define ZV_TIMER_H
@@ -15,6 +11,7 @@
 
 typedef int (*timer_handler_pt)(zv_http_request_t *rq);
 
+// zv_timer_node 定时器实例
 typedef struct zv_timer_node_s{
     size_t key;
     int deleted;    /* if remote client close the socket first, set deleted to 1 */

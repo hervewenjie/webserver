@@ -58,6 +58,7 @@ void do_request(void *ptr) {
     char *plast = NULL;
     size_t remain_size;
     
+    // 删除计时器 说明有数据到来
     zv_del_timer(r);
     for(;;) {
         plast = &r->buf[r->last % MAX_BUF];
@@ -67,19 +68,17 @@ void do_request(void *ptr) {
         check(r->last - r->pos < MAX_BUF, "request buffer overflow!");
 
         if (n == 0) {   
-            // EOF
-            log_info("read return 0, ready to close fd %d, remain_size = %zu", fd, remain_size);
-            goto err;
+            // read返回0表示client关闭连接 EOF
+            log_info("read return 0, ready to close fd %d, remain_size = %zu", fd, remain_size);goto err;
         }
 
+        // n==-1已经读完所有数据, 跳出循环
         if (n < 0) {
-            if (errno != EAGAIN) {
-                log_err("read err, and errno = %d", errno);
-                goto err;
-            }
+            if (errno != EAGAIN) {log_err("read err, and errno = %d", errno);goto err;}
             break;
         }
 
+        // 已经读了多少字节
         r->last += n;
         check(r->last - r->pos < MAX_BUF, "request buffer overflow!");
         
@@ -88,31 +87,28 @@ void do_request(void *ptr) {
         if (rc == ZV_AGAIN) {
             continue;
         } else if (rc != ZV_OK) {
-            log_err("rc != ZV_OK");
-            goto err;
+            log_err("rc != ZV_OK");goto err;
         }
 
         log_info("method == %.*s", (int)(r->method_end - r->request_start), (char *)r->request_start);
         log_info("uri == %.*s", (int)(r->uri_end - r->uri_start), (char *)r->uri_start);
 
-        debug("ready to parse request body");
+        log_info("ready to parse request body");
         rc = zv_http_parse_request_body(r);
         if (rc == ZV_AGAIN) {
             continue;
         } else if (rc != ZV_OK) {
-            log_err("rc != ZV_OK");
-            goto err;
+            log_err("rc != ZV_OK");goto err;
         }
         
-        /*
-        *   handle http header
-        */
+        // out表示HTTP的response
         zv_http_out_t *out = (zv_http_out_t *)malloc(sizeof(zv_http_out_t));
         if (out == NULL) {
             log_err("no enough space for zv_http_out_t");
             exit(1);
         }
 
+        // 初始化response
         rc = zv_init_out_t(out, fd);
         check(rc == ZV_OK, "zv_init_out_t");
 
@@ -123,10 +119,8 @@ void do_request(void *ptr) {
             continue;
         }
 
-        if (!(S_ISREG(sbuf.st_mode)) || !(S_IRUSR & sbuf.st_mode))
-        {
-            do_error(fd, filename, "403", "Forbidden",
-                    "zaver can't read the file");
+        if (!(S_ISREG(sbuf.st_mode)) || !(S_IRUSR & sbuf.st_mode)) {
+            do_error(fd, filename, "403", "Forbidden", "zaver can't read the file");
             continue;
         }
         
@@ -141,6 +135,8 @@ void do_request(void *ptr) {
 
         serve_static(fd, filename, sbuf.st_size, out);
 
+        // header没有keep-alive
+        // serve_static中已经发送数据, 关闭这个连接
         if (!out->keep_alive) {
             log_info("no keep_alive! ready to close");
             free(out);
@@ -150,8 +146,16 @@ void do_request(void *ptr) {
 
     }
     
+    // 如果不需要关闭连接, 需要对epoll进行设置
     struct epoll_event event;
     event.data.ptr = ptr;
+    // 假如这个HTTP请求分5个包过来, 上面的循环读取会保证读完(EOF)
+    // 没有关闭的连接的话, 显示设置epoll, 下次才会返回这个fd, 从而再分配
+    // 因为HTTP无状态, 下次分给另一个线程处理也没有关系
+
+    // 如果不EPOLLONESHOT, 假设多线程, 本线程只读了一个包, 这时候又来了一个包, 状态改变
+    // 主线程的EPOLL_WAIT会返回这个fd, 可能会被分给别的线程, 导致多个线程处理同一个fd的情况
+    // 多个线程处理同一个fd程序健壮性明显得不到保证
     event.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
 
     zv_epoll_mod(r->epfd, r->fd, &event);
@@ -207,6 +211,7 @@ static void parse_uri(char *uri, int uri_length, char *filename, char *querystri
     return;
 }
 
+// 错误页面
 static void do_error(int fd, char *cause, char *errnum, char *shortmsg, char *longmsg)
 {
     char header[MAXLINE], body[MAXLINE];
@@ -229,6 +234,7 @@ static void do_error(int fd, char *cause, char *errnum, char *shortmsg, char *lo
     return;
 }
 
+// 发送静态页面
 static void serve_static(int fd, char *filename, size_t filesize, zv_http_out_t *out) {
     char header[MAXLINE];
     char buf[SHORTLINE];
@@ -284,6 +290,7 @@ out:
     return;
 }
 
+// 文件类型?
 static const char* get_file_type(const char *type)
 {
     if (type == NULL) {

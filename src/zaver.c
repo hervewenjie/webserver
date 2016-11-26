@@ -97,6 +97,7 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
+    // =====================================================
     // 初始化监听socket
     int listenfd;
     struct sockaddr_in clientaddr;
@@ -116,6 +117,9 @@ int main(int argc, char* argv[]) {
     zv_init_request_t(request, listenfd, epfd, &cf);
 
     event.data.ptr = (void *)request;
+    // 对于listen_fd, 我们关心:
+    // EPOLLIN 可读事件
+    // EPOLLET 边沿触发, 状态改变才返回
     event.events = EPOLLIN | EPOLLET;
     zv_epoll_add(epfd, listenfd, &event);
 
@@ -139,9 +143,13 @@ int main(int argc, char* argv[]) {
 
     // 事件循环
     while (1) {
+
         time = zv_find_timer();
         debug("wait time = %d", time);
+
         n = zv_epoll_wait(epfd, events, MAXEVENTS, time);
+
+        // 处理超时事件
         zv_handle_expire_timers();
         
         for (i = 0; i < n; i++) {
@@ -172,9 +180,12 @@ int main(int argc, char* argv[]) {
 
                     zv_init_request_t(request, infd, epfd, &cf);
                     event.data.ptr = (void *)request;
+                    // 我们关心的事件 可读|边沿触发|只返回一次
+                    // 比如一个HTTP请求分成5个包, 只返回给一个线程处理
                     event.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
 
                     zv_epoll_add(epfd, infd, &event);
+                    // 加入定时器, 超时即关闭连接
                     zv_add_timer(request, TIMEOUT_DEFAULT, zv_http_close_conn);
                 }   // end of while of accept
 
